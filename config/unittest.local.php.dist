@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Include this to speed up your unittests or preserve your database
+ */
+
+return [
+    'unittest' => [
+        'skip_database_reset' => true,
+    ],
+];

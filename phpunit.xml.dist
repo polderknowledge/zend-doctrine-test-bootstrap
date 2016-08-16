@@ -1,0 +1,9 @@
+<phpunit
+        bootstrap="vendor/polderknowledge/test/bootstrap.php"
+        backupGlobals="false">
+    <testsuites>
+        <testsuite name="MyModule">
+            <directory>module/MyModule/test</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

@@ -1,11 +1,11 @@
 {
-    "name": "polderknowledge/test",
+    "name": "polderknowledge/test-bootstrap",
     "require": {
         "php": ">=5.5.0"
     },
-    "autoload-dev": {
+    "autoload": {
         "psr-4": {
-            "PolderKnowledge\\Test\\": "src/"
+            "PolderKnowledge\\TestBootstrap\\": "src/"
         }
-    },
+    }
 }

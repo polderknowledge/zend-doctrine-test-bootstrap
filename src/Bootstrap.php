@@ -1,6 +1,6 @@
 <?php
 
-namespace PolderKnowledge\Test;
+namespace PolderKnowledge\TestBootstrap;
 
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -20,7 +20,7 @@ use Zend\ServiceManager\ServiceManager;
 use Zend\Stdlib\ArrayUtils;
 
 /**
- * Class to bootstrap Zend Framework to enable unit testing
+ * Singleton class to bootstrap Zend Framework
  */
 class Bootstrap
 {

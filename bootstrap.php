@@ -7,4 +7,4 @@ chdir(__DIR__ .'/../../..');
 
 require 'vendor/autoload.php';
 
-\PolderKnowledge\Test\Bootstrap::getApplication();
+\PolderKnowledge\TestBootstrap\Bootstrap::getApplication();

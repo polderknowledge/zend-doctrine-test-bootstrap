@@ -4,19 +4,12 @@ namespace PolderKnowledge\TestBootstrap;
 
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
-use Doctrine\Common\Persistence\Mapping\RuntimeReflectionService;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Tools\SchemaTool;
+use Doctrine\ORM\EntityManagerInterface;
 use DoctrineDataFixtureModule\Command\ImportCommand;
 use DoctrineDataFixtureModule\Loader\ServiceLocatorAwareLoader;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Output\ConsoleOutput;
-use Symfony\Component\Console\Output\NullOutput;
+use Psr\Container\ContainerInterface;
 use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\Application;
-use Doctrine\ORM\EntityManagerInterface;
-use Zend\ServiceManager\ServiceManager;
 use Zend\Stdlib\ArrayUtils;
 
 /**
@@ -24,9 +17,10 @@ use Zend\Stdlib\ArrayUtils;
  */
 class Bootstrap
 {
-    static private $application;
+    /** @var Application */
+    private static $application;
 
-    public static function getApplication()
+    public static function getApplication(): Application
     {
         if (self::$application === null) {
             self::$application = self::buildApplication();
@@ -35,10 +29,7 @@ class Bootstrap
         return self::$application;
     }
 
-    /**
-     * @return Application
-     */
-    private static function buildApplication()
+    private static function buildApplication(): Application
     {
         $mergedApplicationConfig = ArrayUtils::merge(
             require 'config/application.config.php',
@@ -46,6 +37,7 @@ class Bootstrap
         );
 
         error_reporting(E_ALL & ~E_USER_DEPRECATED);
+
         echo "Calling Zend\\Mvc\\Application::init()\n";
         $application = \Zend\Mvc\Application::init($mergedApplicationConfig);
         $serviceManager = $application->getServiceManager();
@@ -74,7 +66,7 @@ class Bootstrap
         return $application;
     }
 
-    private static function dropTables(EntityManagerInterface $entityManager)
+    private static function dropTables(EntityManagerInterface $entityManager): void
     {
         $connection = $entityManager->getConnection();
 
@@ -93,40 +85,20 @@ class Bootstrap
         $connection->exec('SET foreign_key_checks = 1');
     }
 
-    private static function createSchema(EntityManager $entityManager)
+    private static function createSchema(): void
     {
         echo "Generating schema\n";
+
         passthru('php public/index.php orm:schema-tool:create');
+
         echo "Finished generating schema\n";
-        return;
-
-        /*
-         * Does not work in some edge cases
-         * Better use Doctrine\Common\DataFixtures\Purger\ORMPurger but that might not be available in every project
-         *
-        $metaDataDriver = $entityManager->getConfiguration()->getMetadataDriverImpl();
-        $namingStrategy = $entityManager->getConfiguration()->getNamingStrategy();
-
-        $allClassMetaData = [];
-
-        foreach ($metaDataDriver->getAllClassNames() as $className) {
-            $metaData = new ClassMetadata($className, $namingStrategy);
-            $metaData->initializeReflection(new RuntimeReflectionService);
-            $metaDataDriver->loadMetadataForClass($className, $metaData);
-
-            $allClassMetaData[] = $metaData;
-        }
-
-        $schemaTool = new SchemaTool($entityManager);
-        $schemaTool->createSchema($allClassMetaData);
-        */
     }
 
-    private static function initDatabase(ServiceManager $serviceManager, EntityManager $entityManager)
+    private static function initDatabase(ContainerInterface $container, EntityManagerInterface $entityManager): void
     {
         // check if DoctrineDataFixtureModule is present
         /** @var ModuleManager $moduleManager */
-        $moduleManager = $serviceManager->get('ModuleManager');
+        $moduleManager = $container->get('ModuleManager');
         $moduleNames = array_keys($moduleManager->getLoadedModules());
 
         if (!in_array('DoctrineDataFixtureModule', $moduleNames)) {
@@ -134,12 +106,12 @@ class Bootstrap
             return;
         }
 
-        $loader = new ServiceLocatorAwareLoader($serviceManager);
+        $loader = new ServiceLocatorAwareLoader($container);
         $purger = new ORMPurger;
 
         $executor = new ORMExecutor($entityManager, $purger);
 
-        foreach ($serviceManager->get('config')['doctrine']['fixture'] as $key => $value) {
+        foreach ($container->get('config')['doctrine']['fixture'] as $key => $value) {
             $loader->loadFromDirectory($value);
         }
         $executor->execute($loader->getFixtures());

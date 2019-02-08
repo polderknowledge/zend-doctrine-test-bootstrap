@@ -1,7 +1,20 @@
 {
-    "name": "polderknowledge/test-bootstrap",
+    "name": "polderknowledge/zend-doctrine-test-bootstrap",
+    "description": "This library is for testing PHP code in the Zend Framework 2 + Doctrine + PHPUnit ecosystem",
+    "license": "MIT",
+    "type": "library",
     "require": {
-        "php": ">=5.5.0"
+        "php": ">=7.1.0",
+        "psr/container": "*",
+        "doctrine/orm": "*",
+        "zendframework/zend-modulemanager": "*",
+        "zendframework/zend-servicemanager": "*",
+        "zendframework/zend-stdlib": "*",
+        "zendframework/zend-mvc": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*",
+        "doctrine/migrations": "*"
     },
     "autoload": {
         "psr-4": {

@@ -2,14 +2,18 @@
 
 namespace PolderKnowledge\TestBootstrap;
 
-class AbstractTest extends \PHPUnit_Framework_TestCase
+use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
+
+abstract class AbstractTest extends TestCase
 {
     protected $application;
 
-    /* @var \Zend\ServiceManager\ServiceManager */
+    /* @var ContainerInterface */
     protected $serviceManager;
 
-    /* @var \Doctrine\ORM\EntityManagerInterface */
+    /* @var EntityManagerInterface */
     protected $entityManager;
 
     protected function setUp()
@@ -21,7 +25,7 @@ class AbstractTest extends \PHPUnit_Framework_TestCase
 
     /**
      * For when you want to test your side-effects on another client
-     * @return \Doctrine\ORM\EntityManagerInterface
+     * @return EntityManagerInterface
      */
     protected function createIndependentEntityManager()
     {

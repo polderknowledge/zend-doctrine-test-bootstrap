@@ -1,5 +1,5 @@
 <phpunit
-        bootstrap="vendor/polderknowledge/test-bootstrap/bootstrap.php"
+        bootstrap="vendor/polderknowledge/zend-doctrine-test-bootstrap/bootstrap.php"
         backupGlobals="false">
     <testsuites>
         <testsuite name="MyModule">

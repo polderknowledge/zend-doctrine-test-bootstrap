@@ -57,7 +57,7 @@ class Bootstrap
         self::dropTables($entityManager);
 
         echo "Creating all tables\n";
-        self::createSchema($entityManager);
+        self::createSchema();
 
         echo "Initializing database content\n";
         self::initDatabase($serviceManager, $entityManager);

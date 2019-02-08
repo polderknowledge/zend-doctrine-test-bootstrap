@@ -1,5 +1,6 @@
+# zend-doctrine-test-bootstrap
 
-This module is for testing PHP code in the Zend Framework 2 + Doctrine + PHPUnit ecosystem
+This library is for testing PHP code in the Zend Framework 2 + Doctrine + PHPUnit ecosystem
 
 It contains:
 * An AbstractTest class for PHPUnit to get hold of the ServiceManager and EntityManager

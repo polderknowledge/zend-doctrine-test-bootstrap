@@ -106,21 +106,11 @@ class Bootstrap
     {
         echo "Generating schema\n";
 
-        $metaDataDriver = $entityManager->getConfiguration()->getMetadataDriverImpl();
-        $namingStrategy = $entityManager->getConfiguration()->getNamingStrategy();
-
-        $allClassMetaData = [];
-
-        foreach ($metaDataDriver->getAllClassNames() as $className) {
-            $metaData = new ClassMetadata($className, $namingStrategy);
-            $metaData->initializeReflection(new RuntimeReflectionService);
-            $metaDataDriver->loadMetadataForClass($className, $metaData);
-
-            $allClassMetaData[] = $metaData;
-        }
+        $metaDatas = $entityManager->getMetadataFactory()->getAllMetadata();
 
         $schemaTool = new SchemaTool($entityManager);
-        $schemaTool->createSchema($allClassMetaData);
+        $schemaTool->createSchema($metaDatas);
+
 
         echo "Finished generating schema\n";
     }
@@ -158,14 +148,12 @@ class Bootstrap
             'group' => $groupName,
         ]);
 
-        $purger = new ORMPurger();
-
         $loader = new Loader();
         foreach ($dataFixtureManager->getAll() as $fixture) {
             $loader->addFixture($fixture);
         }
 
-        $executor = new ORMExecutor($dataFixtureManager->getObjectManager(), $purger);
+        $executor = new ORMExecutor($dataFixtureManager->getObjectManager(), new ORMPurger());
         $executor->execute($loader->getFixtures(), true);
     }
 }

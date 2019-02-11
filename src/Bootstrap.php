@@ -4,7 +4,11 @@ namespace PolderKnowledge\TestBootstrap;
 
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
+use Doctrine\Common\Persistence\Mapping\RuntimeReflectionService;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Tools\SchemaTool;
 use DoctrineDataFixtureModule\Command\ImportCommand;
 use DoctrineDataFixtureModule\Loader\ServiceLocatorAwareLoader;
 use Psr\Container\ContainerInterface;
@@ -29,17 +33,27 @@ class Bootstrap
         return self::$application;
     }
 
+    private static function getApplicationConfig()
+    {
+        $applicationConfig = require 'config/application.config.php';
+
+        if (file_exists('config/development.config.php')) {
+            $applicationConfig = ArrayUtils::merge($applicationConfig, require 'config/development.config.php');
+        }
+
+        if (file_exists('config/test.config.php')) {
+            $applicationConfig = ArrayUtils::merge($applicationConfig, require 'config/test.config.php');
+        }
+
+        return $applicationConfig;
+    }
+
     private static function buildApplication(): Application
     {
-        $mergedApplicationConfig = ArrayUtils::merge(
-            require 'config/application.config.php',
-            require 'config/development.config.php'
-        );
-
         error_reporting(E_ALL & ~E_USER_DEPRECATED);
 
         echo "Calling Zend\\Mvc\\Application::init()\n";
-        $application = \Zend\Mvc\Application::init($mergedApplicationConfig);
+        $application = \Zend\Mvc\Application::init(self::getApplicationConfig());
         $serviceManager = $application->getServiceManager();
 
         $config = $serviceManager->get('config');
@@ -57,7 +71,7 @@ class Bootstrap
         self::dropTables($entityManager);
 
         echo "Creating all tables\n";
-        self::createSchema();
+        self::createSchema($entityManager);
 
         echo "Initializing database content\n";
         self::initDatabase($serviceManager, $entityManager);
@@ -85,11 +99,25 @@ class Bootstrap
         $connection->exec('SET foreign_key_checks = 1');
     }
 
-    private static function createSchema(): void
+    private static function createSchema(EntityManager $entityManager): void
     {
         echo "Generating schema\n";
 
-        passthru('php public/index.php orm:schema-tool:create');
+        $metaDataDriver = $entityManager->getConfiguration()->getMetadataDriverImpl();
+        $namingStrategy = $entityManager->getConfiguration()->getNamingStrategy();
+
+        $allClassMetaData = [];
+
+        foreach ($metaDataDriver->getAllClassNames() as $className) {
+            $metaData = new ClassMetadata($className, $namingStrategy);
+            $metaData->initializeReflection(new RuntimeReflectionService);
+            $metaDataDriver->loadMetadataForClass($className, $metaData);
+
+            $allClassMetaData[] = $metaData;
+        }
+
+        $schemaTool = new SchemaTool($entityManager);
+        $schemaTool->createSchema($allClassMetaData);
 
         echo "Finished generating schema\n";
     }

@@ -3,6 +3,7 @@
 namespace PolderKnowledge\TestBootstrap;
 
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
+use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\Common\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\ORM\EntityManager;
@@ -14,7 +15,9 @@ use DoctrineDataFixtureModule\Loader\ServiceLocatorAwareLoader;
 use Psr\Container\ContainerInterface;
 use Zend\ModuleManager\ModuleManager;
 use Zend\Mvc\Application;
+use Zend\ServiceManager\ServiceManager;
 use Zend\Stdlib\ArrayUtils;
+use ZF\Doctrine\DataFixture\DataFixtureManager;
 
 /**
  * Singleton class to bootstrap Zend Framework
@@ -129,19 +132,40 @@ class Bootstrap
         $moduleManager = $container->get('ModuleManager');
         $moduleNames = array_keys($moduleManager->getLoadedModules());
 
-        if (!in_array('DoctrineDataFixtureModule', $moduleNames)) {
-            echo "DoctrineDataFixtureModule not enabled. Skipping database initialization";
+        if (!in_array('ZF\\Doctrine\\DataFixture', $moduleNames)) {
+            echo "ZF\\Doctrine\\DataFixture module is not present. Skipping database initialization";
             return;
         }
 
-        $loader = new ServiceLocatorAwareLoader($container);
-        $purger = new ORMPurger;
-
-        $executor = new ORMExecutor($entityManager, $purger);
-
-        foreach ($container->get('config')['doctrine']['fixture'] as $key => $value) {
-            $loader->loadFromDirectory($value);
+        foreach (self::getFixtureGroupNames($container) as $groupName) {
+            self::executeFixtureGroup($container, $groupName);
         }
-        $executor->execute($loader->getFixtures());
+    }
+    
+    private static function getFixtureGroupNames(ContainerInterface $container): array
+    {
+        $fixtureConfig = $container->get('config')['doctrine']['fixture'];
+        $fixtureGroups = array_keys($fixtureConfig);
+        return $fixtureGroups;
+    }
+    
+    private static function executeFixtureGroup(ServiceManager $serviceManager, string $groupName)
+    {
+        echo "Executing fixture group $groupName";
+
+        /** @var DataFixtureManager $dataFixtureManager */
+        $dataFixtureManager = $serviceManager->build(DataFixtureManager::class, [
+            'group' => $groupName,
+        ]);
+
+        $purger = new ORMPurger();
+
+        $loader = new Loader();
+        foreach ($dataFixtureManager->getAll() as $fixture) {
+            $loader->addFixture($fixture);
+        }
+
+        $executor = new ORMExecutor($dataFixtureManager->getObjectManager(), $purger);
+        $executor->execute($loader->getFixtures(), true);
     }
 }

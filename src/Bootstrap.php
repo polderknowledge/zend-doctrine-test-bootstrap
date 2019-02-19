@@ -87,16 +87,27 @@ class Bootstrap
     {
         $connection = $entityManager->getConnection();
 
-        $statement = $connection->prepare('SHOW TABLES');
+        $statement = $connection->prepare('SHOW FULL TABLES WHERE Table_type = "BASE TABLE"');
         $statement->execute();
         $tables = $statement->fetchAll();
 
         $connection->exec('SET foreign_key_checks = 0');
-        echo "Dropping database\n";
+        echo "Dropping tables\n";
         foreach ($tables as $table)
         {
             $tableName = current($table);
             $connection->exec('DROP TABLE `' . $tableName . '`');
+        }
+
+        $statement = $connection->prepare('SHOW FULL TABLES WHERE Table_type = "VIEW"');
+        $statement->execute();
+        $views = $statement->fetchAll();
+
+        echo "Dropping views\n";
+        foreach ($views as $view)
+        {
+            $viewName = current($view);
+            $connection->exec('DROP VIEW `' . $viewName . '`');
         }
 
         $connection->exec('SET foreign_key_checks = 1');
